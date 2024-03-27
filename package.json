@@ -1,0 +1,45 @@
+{
+  "name": "jse",
+  "displayName": "jse",
+  "description": "jse",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.52.0"
+  },
+  "publisher": "@zstings",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/zstings/jse.git"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onLanguage:javascript",
+    "onLanguage:typescript"
+  ],
+  "main": "./extension.js",
+  "contributes": {
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "jse.isEval": {
+          "type": "boolean",
+          "default": true,
+          "description": "是否开启eval模式的压缩"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "lint": "eslint .",
+    "pretest": "pnpm run lint",
+    "test": "vscode-test",
+    "dev": "vite build -w",
+    "build": "pnpm vsce package --no-dependencies"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.52.0",
+    "@vscode/vsce": "^2.24.0"
+  }
+}
