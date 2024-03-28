@@ -2,7 +2,7 @@
   "name": "jse",
   "displayName": "jse",
   "description": "jse",
-  "version": "0.0.1",
+  "version": "1.0.0",
   "engines": {
     "vscode": "^1.52.0"
   },
@@ -27,6 +27,16 @@
           "type": "boolean",
           "default": true,
           "description": "是否开启eval模式的压缩"
+        },
+        "jse.identificationIdentifier": {
+          "type": "string",
+          "default": ".bak",
+          "description": "识别标识符, 默认.bak, 源文件必须为.bak.js或者.bak.ts的后缀插件才会激活开启压缩"
+        },
+        "jse.generateIdentifier": {
+          "type": "string",
+          "default": ".min",
+          "description": "生成标识符, 默认.min, 生成的文件会以.min.js结尾"
         }
       }
     }

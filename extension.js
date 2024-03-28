@@ -11,19 +11,19 @@ const { join, parse, basename, dirname } = require("path");
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
-let isAutoSave = true;
 /**
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
   let dispJs = vscode.workspace.onDidSaveTextDocument(async (e) => {
-    if (e.languageId === "javascript" || e.languageId === "typescript") {
-      if (isAutoSave == false) return;
-      const { isEval } = vscode.workspace.getConfiguration("jse");
-
+    if (["javascript", "typescript"].includes(e.languageId)) {
+      const { isEval, identificationIdentifier, generateIdentifier } = vscode.workspace.getConfiguration("jse");
+      const identifier = identificationIdentifier + e.fileName.slice(-3);
+      const ishz = basename(e.fileName).endsWith(identifier);
+      if (!ishz) return;
       const filePath = join(dirname(e.fileName), basename(e.fileName));
       const fileName = parse(basename(e.fileName)).name;
-      const outputPath = join(dirname(e.fileName), `${fileName}.min.js`);
+      const outputPath = join(dirname(e.fileName), `${fileName}${generateIdentifier}.js`).replace(identificationIdentifier, "");
 
       const examplePlugin = {
         name: "example",
