@@ -1,11 +1,12 @@
 {
   "name": "jse",
   "displayName": "jse",
-  "description": "jse",
+  "description": "javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件",
   "version": "1.0.0",
   "engines": {
     "vscode": "^1.52.0"
   },
+  "icon": "icon.png",
   "publisher": "@zstings",
   "repository": {
     "type": "git",
