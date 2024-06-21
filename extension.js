@@ -53,7 +53,7 @@ function activate(context) {
             });
             const jsob = require('./jsob.js');
             result.code = jsob.obfuscate(result.code, {
-              compact: true, // 压缩代码：否
+              compact: false, // 压缩代码：否
               controlFlowFlattening: false, // 控制流扁平化：否
               deadCodeInjection: false, // 注入死代码：否
               debugProtection: false, // 调试保护：否
@@ -77,6 +77,27 @@ function activate(context) {
               stringArrayThreshold: 0.75, // 字符串数组阈值：0.75
               unicodeEscapeSequence: false, // Unicode转义序列：否
             })._obfuscatedCode;
+            result.code = terser.minify_sync(result.code, {
+              mangle: {
+                toplevel: true,
+              },
+              compress: {
+                passes: 3, // 多次压缩
+                keep_fnames: true,
+                booleans: true, // 优化布尔值
+                dead_code: true, // 移除未使用的代码
+                drop_console: false, // 移除console.*调用
+                drop_debugger: false, // 移除debugger声明
+                conditionals: true, // 优化if-s、比较等
+                evaluate: true, // 计算常量表达式
+                sequences: true, // 使用逗号运算符
+                toplevel: true, // 处理顶层作用域
+              },
+              output: {
+                beautify: false, // 禁用美化
+                comments: false, // 移除所有注释
+              },
+            }).code;
             await fs.promises.writeFile(outputPath, result.code);
           });
         },

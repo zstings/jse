@@ -2,7 +2,7 @@
   "name": "jse",
   "displayName": "JSE",
   "description": "javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件",
-  "version": "2.0.0",
+  "version": "2.5.0",
   "engines": {
     "vscode": "^1.52.0"
   },
@@ -46,6 +46,9 @@
   },
   "devDependencies": {
     "@types/vscode": "1.52.0",
-    "@vscode/vsce": "^2.24.0"
+    "@vscode/vsce": "^2.24.0",
+    "javascript-obfuscator": "^4.1.1",
+    "terser": "^5.31.1",
+    "vite": "^5.3.1"
   }
 }

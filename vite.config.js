@@ -1,24 +1,24 @@
 // vite.config.js
-import { resolve } from "path";
-import { defineConfig } from "vite";
+import { resolve } from 'path';
+import { defineConfig } from 'vite';
 
 export default defineConfig({
   build: {
     lib: {
-      // Could also be a dictionary or array of multiple entry points
-      entry: resolve(__dirname, "src/extension.js"),
-      formats: ["cjs"],
-      // the proper extensions will be added
-      fileName: "extension",
+      entry: './1.js',
+      formats: ['cjs'],
+      fileName: 'jsob',
     },
     rollupOptions: {
-      // 确保外部化处理那些你不想打包进库的依赖
-      // external: ["vscode", "path", "fs", "esbuild", "./packer", "jsdom"],
-    },
-  },
-  resolve: {
-    alias: {
-      "@modules": resolve(__dirname, "modules"),
+      plugins: [
+        {
+          name: 'cdn',
+          generateBundle(_, bundle) {
+            console.log(bundle);
+            bundle['jsob.cjs'].code = bundle['jsob.cjs'].code.replace('"use strict";', '"use strict";var self = global;');
+          },
+        },
+      ],
     },
   },
 });
