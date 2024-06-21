@@ -1,8 +1,8 @@
 {
   "name": "jse",
-  "displayName": "jse",
+  "displayName": "JSE",
   "description": "javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "engines": {
     "vscode": "^1.52.0"
   },
@@ -24,11 +24,6 @@
     "configuration": {
       "type": "object",
       "properties": {
-        "jse.isEval": {
-          "type": "boolean",
-          "default": true,
-          "description": "是否开启eval模式的压缩"
-        },
         "jse.identificationIdentifier": {
           "type": "string",
           "default": ".bak",
