@@ -1,8 +1,15 @@
 # JSE
 
-javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件
+<!-- javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件 -->
+javascript 文件 压缩混淆加密，并生成新的文件
 
-## 插件提供一个基础设置值
+插件激活时注册JSE1和JSE2两个按钮在任务栏
+
+JSE1 使用 terser + packer
+
+JSE2 使用 jshaman + packer
+
+## 插件提供两个基础设置值
 
 ## identificationIdentifier 标识
 
