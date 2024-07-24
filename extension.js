@@ -4,10 +4,110 @@
 // import fs from "fs";
 // import { context as esContext } from "esbuild";
 // import { join, parse, basename, dirname } from "path";
+const { exec } = require('child_process');
 const vscode = require('vscode');
-const { context: esContext } = require('./modules/esbuild');
+// const { context: esContext } = require('./modules/esbuild');
 const fs = require('fs');
-const { join, parse, basename, dirname } = require('path');
+const { join, parse, basename, dirname, resolve } = require('path');
+const packer = require('./core/packer.js')
+const terser = require('./core/terser.js')
+const axios = require('./core/axios.js')
+console.log(56, axios.post)
+console.log(packer.pack(`console.log('111  22')`, false, true))
+console.log(packer.pack(`console.log(\`1    11\`)`, false, true))
+console.log(packer.pack(`console.log(\`https://www.cs.com asdas asad   asd 1\`)`, false, true))
+console.log(packer.pack('console.log(`https://asd.csds`)', false, true))
+// console.log(1, resolve(__dirname, './packer.html'), jsdom)
+let newloading = false
+// 状态栏按钮注册
+function createStatusBarItem(text, tooltip, command) {
+  const myButton = vscode.window.createStatusBarItem(
+    vscode.StatusBarAlignment.Right,
+    100
+  )
+  myButton.tooltip = tooltip
+  myButton.text = text
+  myButton.color = "white"
+  myButton.command = command
+  myButton.show()
+}
+// 加密函数
+async function jsTerser(_, type){
+  // 获取当前活动的编辑器
+  const editor = vscode.window.activeTextEditor;
+  if (editor && editor.document.languageId == 'javascript') {
+    // 获取设置 generateIdentifier = '.min'  identificationIdentifier = '.bak'
+    const { identificationIdentifier, generateIdentifier } = vscode.workspace.getConfiguration('jse');
+    // 得到后缀 .bak.js
+    const identifier = identificationIdentifier + editor.document.fileName.slice(-3);
+    // 判断当前文件的后最是否符合identifier
+    const ishz = basename(editor.document.fileName).endsWith(identifier);
+    if (!ishz) return vscode.window.showInformationMessage('文件后缀与设置不符');
+    if (newloading) return vscode.window.showInformationMessage('有任务正在运行，请稍后再试');
+    let jseCode = ''
+    if (type == '01') {
+      // 调用 terser
+      const result = terser.minify_sync(editor.document.getText(), {
+        mangle: {
+          toplevel: true,
+        },
+        compress: {
+          passes: 3, // 多次压缩
+          keep_fnames: true,
+          booleans: true, // 优化布尔值
+          dead_code: true, // 移除未使用的代码
+          drop_console: false, // 移除console.*调用
+          drop_debugger: false, // 移除debugger声明
+          conditionals: true, // 优化if-s、比较等
+          evaluate: true, // 计算常量表达式
+          sequences: true, // 使用逗号运算符
+          toplevel: true, // 处理顶层作用域
+        },
+        output: {
+          beautify: false, // 禁用美化
+          comments: false, // 移除所有注释
+        },
+      });
+      jseCode = result.code
+    }
+    if (type == '02') {
+      newloading = true
+      const jshamanHeader = {
+        'Connection': 'keep-alive',
+        'Origin': 'http://www.jshaman.com',
+        'Referer': 'http://www.jshaman.com/',
+        'accept': 'application/json, text/javascript, */*; q=0.01',
+        'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/113.0.0.0 Safari/537.36',
+        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+      }
+      try {
+        const res = await axios.post('https://www.jshaman.com:4430/submit_js_code/', {
+          js_code: editor.document.getText(),
+          vip_code: 'free'
+        }, { headers: jshamanHeader })
+        jseCode = res.data.content
+      } catch(err) {
+        vscode.window.showInformationMessage('加密失败');
+        console.log(err)
+        return;
+      } finally {
+        newloading = false
+      }
+    }
+    // 调用 packer 压缩
+    jseCode = packer.pack(jseCode, true, true)
+    // 获取写入文件路径
+    const outputPath = join(dirname(editor.document.fileName), `${parse(basename(editor.document.fileName)).name}${generateIdentifier}.js`).replace(identificationIdentifier, '');
+    // 写入文件
+    fs.writeFileSync(outputPath, jseCode, 'utf-8');
+    // 计算写入文件大小并输出提示
+    vscode.window.showInformationMessage('JSE run done. size: ' + parseFloat((fs.statSync(outputPath).size / 1024).toFixed(2)) + 'kb');
+  } else {
+    vscode.window.showInformationMessage('没有活动的编辑器 或者 不是javascript');
+  }
+}
+
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
@@ -15,119 +115,36 @@ const { join, parse, basename, dirname } = require('path');
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
-  let dispJs = vscode.workspace.onDidSaveTextDocument(async e => {
-    if (['javascript', 'typescript'].includes(e.languageId)) {
-      const { identificationIdentifier, generateIdentifier } = vscode.workspace.getConfiguration('jse');
-      const identifier = identificationIdentifier + e.fileName.slice(-3);
-      const ishz = basename(e.fileName).endsWith(identifier);
-      if (!ishz) return;
-      const filePath = join(dirname(e.fileName), basename(e.fileName));
-      const fileName = parse(basename(e.fileName)).name;
-      const outputPath = join(dirname(e.fileName), `${fileName}${generateIdentifier}.js`).replace(identificationIdentifier, '');
-      const terser = {
-        name: 'terser',
-        setup(build) {
-          build.onEnd(async () => {
-            const terser = require('./terser');
-            let code = await fs.promises.readFile(outputPath, 'utf8');
-            const result = terser.minify_sync(code, {
-              mangle: {
-                toplevel: true,
-              },
-              compress: {
-                passes: 3, // 多次压缩
-                keep_fnames: true,
-                booleans: true, // 优化布尔值
-                dead_code: true, // 移除未使用的代码
-                drop_console: false, // 移除console.*调用
-                drop_debugger: false, // 移除debugger声明
-                conditionals: true, // 优化if-s、比较等
-                evaluate: true, // 计算常量表达式
-                sequences: true, // 使用逗号运算符
-                toplevel: true, // 处理顶层作用域
-              },
-              output: {
-                beautify: false, // 禁用美化
-                comments: false, // 移除所有注释
-              },
-            });
-            const jsob = require('./jsob.js');
-            result.code = jsob.obfuscate(result.code, {
-              compact: false, // 压缩代码：否
-              controlFlowFlattening: false, // 控制流扁平化：否
-              deadCodeInjection: false, // 注入死代码：否
-              debugProtection: false, // 调试保护：否
-              disableConsoleOutput: false, // 禁用控制台输出：否
-              identifierNamesGenerator: 'mangled', // 标识符名称生成器：混淆
-              log: false, // 日志：否
-              numbersToExpressions: false, // 数字转换为表达式：否
-              renameGlobals: false, // 重命名全局变量：否
-              rotateStringArray: true, // 旋转字符串数组：是
-              selfDefending: false, // 自我防御：否
-              shuffleStringArray: true, // 洗牌字符串数组：是
-              simplify: true, // 简化代码：是
-              splitStrings: true, // 拆分字符串：否
-              stringArray: true, // 使用字符串数组：是
-              stringArrayEncoding: [], // 字符串数组编码：无（空数组）
-              stringArrayIndexShift: true, // 字符串数组索引偏移：是
-              stringArrayWrappersCount: 1, // 字符串数组包装次数：1
-              stringArrayWrappersChainedCalls: true, // 字符串数组包装链调用：是
-              stringArrayWrappersParametersMaxCount: 2, // 字符串数组包装参数最大数量：2
-              stringArrayWrappersType: 'variable', // 字符串数组包装类型：变量
-              stringArrayThreshold: 0.75, // 字符串数组阈值：0.75
-              unicodeEscapeSequence: false, // Unicode转义序列：否
-            })._obfuscatedCode;
-            result.code = terser.minify_sync(result.code, {
-              mangle: {
-                toplevel: true,
-              },
-              compress: {
-                passes: 3, // 多次压缩
-                keep_fnames: true,
-                booleans: true, // 优化布尔值
-                dead_code: true, // 移除未使用的代码
-                drop_console: false, // 移除console.*调用
-                drop_debugger: false, // 移除debugger声明
-                conditionals: true, // 优化if-s、比较等
-                evaluate: true, // 计算常量表达式
-                sequences: true, // 使用逗号运算符
-                toplevel: true, // 处理顶层作用域
-              },
-              output: {
-                beautify: false, // 禁用美化
-                comments: false, // 移除所有注释
-              },
-            }).code;
-            await fs.promises.writeFile(outputPath, result.code);
-          });
-        },
-      };
-      const contexts = await esContext({
-        entryPoints: [filePath],
-        bundle: false,
-        minify: false,
-        sourcemap: false,
-        sourcesContent: false,
-        target: 'chrome80',
-        outfile: outputPath,
-        plugins: [terser],
-        loader: { '.ts': 'ts' },
-      });
-      contexts.rebuild().then(() => {
-        vscode.window.showInformationMessage('JSE run done. size: ' + parseFloat((fs.statSync(outputPath).size / 1024).toFixed(2)) + 'kb');
-      });
-      contexts.dispose();
+  createStatusBarItem('JSE1', '加密方式一', 'jse.01')
+  createStatusBarItem('JSE2', '加密方式二', 'jse.02')
+  // 注册命令-加密方式一
+  const jse1 = vscode.commands.registerCommand('jse.01', async () => {
+    jsTerser(context, '01')
+  });
+  // 注册命令-加密方式二
+  const jse2 = vscode.commands.registerCommand('jse.02', async () => {
+    jsTerser(context, '02')
+  });
+  // 注册命令-下拉选项
+  const disposable = vscode.commands.registerCommand('extension.showOptions', async () => {
+    const options = ['选项一', '选项二'];
+    const selection = await vscode.window.showQuickPick(options, {
+        placeHolder: '请选择一个选项',
+    });
 
-      // fs.writeFile(outputPath, text, (err) => {
-      //   if (err) {
-      //     vscode.window.showErrorMessage("Failed to minify file.");
-      //   } else {
-      //     vscode.window.showInformationMessage("File minified successfully.");
-      //   }
-      // });
+    if (selection === '选项一') {
+        vscode.window.showInformationMessage('你选择了选项一');
+        // 在这里触发选项一的事件
+    } else if (selection === '选项二') {
+        vscode.window.showInformationMessage('你选择了选项二');
+        // 在这里触发选项二的事件
     }
   });
-  context.subscriptions.push(dispJs);
+  // 文件保存时触发
+  let dispJs = vscode.workspace.onDidSaveTextDocument(async e => {
+    console.log(e)
+  });
+  context.subscriptions.push(dispJs, jse1, jse2);
 }
 
 // This method is called when your extension is deactivated
