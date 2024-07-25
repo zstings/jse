@@ -3,7 +3,9 @@
 <!-- javascript 和 typescript 文件在保存时自动压缩混淆加密，并生成新的文件 -->
 javascript 文件 压缩混淆加密，并生成新的文件
 
-插件激活时注册JSE1和JSE2两个按钮在任务栏
+插件激活时注册JSE1和JSE2以及JSEAuto三个按钮在任务栏
+
+JSEAuto: ON / JSEAuto: OFF 是否开启保存时自动加密
 
 JSE1 使用 terser + packer
 

@@ -30,6 +30,7 @@ function createStatusBarItem(text, tooltip, command) {
   myButton.color = "white"
   myButton.command = command
   myButton.show()
+  return myButton
 }
 // 加密函数
 async function jsTerser(_, type){
@@ -48,9 +49,6 @@ async function jsTerser(_, type){
     if (type == '01') {
       // 调用 terser
       const result = terser.minify_sync(editor.document.getText(), {
-        mangle: {
-          toplevel: true,
-        },
         compress: {
           passes: 3, // 多次压缩
           keep_fnames: true,
@@ -115,8 +113,15 @@ async function jsTerser(_, type){
  * @param {vscode.ExtensionContext} context
  */
 function activate(context) {
+  const saveBtn = createStatusBarItem('JSEAuto: ON', '保存时自动加密', 'jse.save')
   createStatusBarItem('JSE1', '加密方式一', 'jse.01')
   createStatusBarItem('JSE2', '加密方式二', 'jse.02')
+  // 注册命令-加密方式一
+  const jsesave = vscode.commands.registerCommand('jse.save', async () => {
+    saveBtn.text = saveBtn.text == 'JSEAuto: ON' ? 'JSEAuto: OFF' : 'JSEAuto: ON'
+    console.log(saveBtn.text)
+    // jsTerser(context, '01')
+  });
   // 注册命令-加密方式一
   const jse1 = vscode.commands.registerCommand('jse.01', async () => {
     jsTerser(context, '01')
@@ -141,10 +146,10 @@ function activate(context) {
     }
   });
   // 文件保存时触发
-  let dispJs = vscode.workspace.onDidSaveTextDocument(async e => {
-    console.log(e)
+  let dispJs = vscode.workspace.onDidSaveTextDocument(async () => {
+    if (saveBtn.text == 'JSEAuto: ON') jsTerser(context, '01')
   });
-  context.subscriptions.push(dispJs, jse1, jse2);
+  context.subscriptions.push(dispJs, jsesave, jse1, jse2);
 }
 
 // This method is called when your extension is deactivated
