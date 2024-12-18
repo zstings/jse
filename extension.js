@@ -33,7 +33,7 @@ function createStatusBarItem(text, tooltip, command) {
   return myButton
 }
 // 加密函数
-async function jsTerser(_, type){
+async function jsTerser(_, type, c = true){
   // 获取当前活动的编辑器
   const editor = vscode.window.activeTextEditor;
   if (editor && editor.document.languageId == 'javascript') {
@@ -43,7 +43,7 @@ async function jsTerser(_, type){
     const identifier = identificationIdentifier + editor.document.fileName.slice(-3);
     // 判断当前文件的后最是否符合identifier
     const ishz = basename(editor.document.fileName).endsWith(identifier);
-    if (!ishz) return vscode.window.showInformationMessage('文件后缀与设置不符');
+    if (!c && !ishz) return vscode.window.showInformationMessage('文件后缀与设置不符');
     if (newloading) return vscode.window.showInformationMessage('有任务正在运行，请稍后再试');
     let jseCode = ''
     if (type == '01') {
@@ -51,15 +51,17 @@ async function jsTerser(_, type){
       const result = terser.minify_sync(editor.document.getText(), {
         compress: {
           passes: 3, // 多次压缩
-          keep_fnames: true,
+          keep_fnames: true, // 保留函数名
           booleans: true, // 优化布尔值
-          dead_code: true, // 移除未使用的代码
+          dead_code: true, // 移除那些永远不会执行的代码块，例如无条件的 return 后的代码块，或 if (false) 中的代码块
           drop_console: false, // 移除console.*调用
           drop_debugger: false, // 移除debugger声明
           conditionals: true, // 优化if-s、比较等
           evaluate: true, // 计算常量表达式
           sequences: true, // 使用逗号运算符
-          toplevel: true, // 处理顶层作用域
+          toplevel: false, // 处理顶层作用域
+          unused: false, // 不移除未使用的代码
+          inline: false, // 禁用内联优化
         },
         output: {
           beautify: false, // 禁用美化
@@ -94,7 +96,7 @@ async function jsTerser(_, type){
       }
     }
     // 调用 packer 压缩
-    jseCode = packer.pack(jseCode, true, true)
+    // jseCode = packer.pack(jseCode, true, true)
     // 获取写入文件路径
     const outputPath = join(dirname(editor.document.fileName), `${parse(basename(editor.document.fileName)).name}${generateIdentifier}.js`).replace(identificationIdentifier, '');
     // 写入文件
@@ -124,11 +126,11 @@ function activate(context) {
   });
   // 注册命令-加密方式一
   const jse1 = vscode.commands.registerCommand('jse.01', async () => {
-    jsTerser(context, '01')
+    jsTerser(context, '01', true)
   });
   // 注册命令-加密方式二
   const jse2 = vscode.commands.registerCommand('jse.02', async () => {
-    jsTerser(context, '02')
+    jsTerser(context, '02', true)
   });
   // 注册命令-下拉选项
   const disposable = vscode.commands.registerCommand('extension.showOptions', async () => {
@@ -147,7 +149,7 @@ function activate(context) {
   });
   // 文件保存时触发
   let dispJs = vscode.workspace.onDidSaveTextDocument(async () => {
-    if (saveBtn.text == 'JSEAuto: ON') jsTerser(context, '01')
+    if (saveBtn.text == 'JSEAuto: ON') jsTerser(context, '01', false)
   });
   context.subscriptions.push(dispJs, jsesave, jse1, jse2);
 }
