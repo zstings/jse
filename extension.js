@@ -96,7 +96,9 @@ async function jsTerser(_, type, c = true){
       }
     }
     // 调用 packer 压缩
-    // jseCode = packer.pack(jseCode, true, true)
+    if (!c) {
+      jseCode = packer.pack(jseCode, true, true)
+    }
     // 获取写入文件路径
     const outputPath = join(dirname(editor.document.fileName), `${parse(basename(editor.document.fileName)).name}${generateIdentifier}.js`).replace(identificationIdentifier, '');
     // 写入文件
